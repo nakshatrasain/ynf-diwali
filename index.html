@@ -50,6 +50,9 @@ body{background:var(--night);color:var(--fg);font-family:var(--body);overflow:hi
 .slot{width:clamp(22px,7vw,40px);height:clamp(34px,9.5vw,50px);display:grid;place-items:center;
   border-bottom:2px solid rgba(247,238,221,.24);font-family:var(--display);font-size:clamp(22px,6.6vw,34px);line-height:1;color:var(--flame)}
 .slots.long .slot{width:clamp(20px,6.2vw,36px);font-size:clamp(19px,5.6vw,30px)}
+.group{display:flex;gap:5px}
+.amp{font-family:var(--display);font-size:clamp(20px,6vw,30px);color:var(--marigold);align-self:flex-end;padding-bottom:4px}
+.slots.xl .slot{width:clamp(18px,5.4vw,34px);font-size:clamp(17px,5vw,28px)}
 .slot.on{border-color:var(--marigold);text-shadow:0 0 14px rgba(255,170,40,.85);animation:pop .45s ease-out}
 @keyframes pop{0%{transform:scale(1.5)}100%{transform:scale(1)}}
 
@@ -113,11 +116,11 @@ label.lbl{font-size:14px;color:var(--fg);text-align:left;display:block;margin-bo
       <p class="eyebrow">Your Next Filter · Diwali 2026</p>
       <p class="deva" lang="hi">शुभ दीपावली</p>
       <h1 id="intro-title">Jaipur saved you a light.</h1>
-      <p>Tonight is amavasya, the darkest night of the year. The letters of your name are hiding in this sky. Use the filter to find them.</p>
+      <p>Tonight is amavasya, the darkest night of the year. The letters of your <span id="iw">name</span> are hiding in this sky. Use the filter to find them.</p>
       <form id="intro-form" autocomplete="off">
         <div class="field" id="name-field">
           <label class="lbl" for="name-input">Your first name</label>
-          <input type="text" id="name-input" maxlength="24" placeholder="Type your name" enterkeyhint="go">
+          <input type="text" id="name-input" maxlength="40" placeholder="Type your name" enterkeyhint="go">
         </div>
         <p class="err" id="name-err" hidden>Add your name to begin.</p>
         <div class="row" style="margin-top:12px"><button class="btn primary" type="submit">Pick up the filter</button></div>
@@ -131,7 +134,7 @@ label.lbl{font-size:14px;color:var(--fg);text-align:left;display:block;margin-bo
       <p class="eyebrow">Your Next Filter · Diwali 2026</p>
       <p class="deva" lang="hi">शुभ दीपावली</p>
       <h1 id="finale-title">Happy Diwali</h1>
-      <p>You found your name in the dark. Here is to a year that looks good in every light.</p>
+      <p id="finale-copy">You found your name in the dark. Here is to a year that looks good in every light.</p>
       <p class="sign">With love, Team YNF, Jaipur</p>
 
       <div class="row" id="finale-actions">
@@ -143,7 +146,7 @@ label.lbl{font-size:14px;color:var(--fg);text-align:left;display:block;margin-bo
       <div id="share-panel" hidden>
         <div class="field">
           <label class="lbl" for="friend-input">Who gets the next light?</label>
-          <input type="text" id="friend-input" maxlength="24" placeholder="Their first name">
+          <input type="text" id="friend-input" maxlength="40" placeholder="Their first name">
         </div>
         <p class="err" id="friend-err" hidden>Use English letters for the link.</p>
         <div class="field" style="margin-top:10px">
@@ -197,21 +200,22 @@ label.lbl{font-size:14px;color:var(--fg);text-align:left;display:block;margin-bo
   const easeOut=t=>1-Math.pow(1-t,3);
 
   let W=0,H=0,dpr=1,G=null,darkC,litC;
-  let state='intro', displayName='', word='', letters=[], flights=[], parts=[];
+  let nameParts=[], state='intro', displayName='', word='', letters=[], flights=[], parts=[];
   let foundMarked=0, filled=0, lastFind=0, secretFound=false, signDwell=0;
   let revealT0=0, revealR0=0, nextBurst=0, toastTimer=0;
   const lens={x:0,y:0,r:80}, target={x:0,y:0};
 
   /* ---------- names ---------- */
   function cleanName(s){
-    s=(s||'').replace(/[-_+]+/g,' ').replace(/\s+/g,' ').trim().slice(0,24);
-    return s.split(' ').map(w=>w?w[0].toUpperCase()+w.slice(1):'').join(' ');
+    s=(s||'').replace(/&/g,' and ').replace(/[-_+]+/g,' ').replace(/\s+/g,' ').trim().slice(0,40);
+    return s.split(' ').map(w=>/^(and|n)$/i.test(w)?'&':w?w[0].toUpperCase()+w.slice(1):'').join(' ');
   }
   function nameToWord(n){
-    const first=(n.split(' ')[0]||'').normalize('NFD').replace(/[̀-ͯ]/g,'').toUpperCase().replace(/[^A-Z]/g,'');
-    return (first||'DIWALI').slice(0,12);
+    nameParts=n.split('&').map(x=>(x.trim().split(' ')[0]||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toUpperCase().replace(/[^A-Z]/g,'').slice(0,13)).filter(Boolean).slice(0,2);
+    if(!nameParts.length)nameParts=['DIWALI'];
+    return nameParts.join('');
   }
-  function slug(s){return (s||'').normalize('NFD').replace(/[̀-ͯ]/g,'').trim().replace(/\s+/g,'-').replace(/[^A-Za-z0-9-]/g,'').replace(/-+/g,'-').replace(/^-|-$/g,'').slice(0,30)}
+  function slug(s){return (s||'').replace(/&/g,' and ').normalize('NFD').replace(/[̀-ͯ]/g,'').trim().replace(/\s+/g,'-').replace(/[^A-Za-z0-9-]/g,'').replace(/-+/g,'-').replace(/^-|-$/g,'').slice(0,30)}
 
   /* ---------- city geometry (same Jaipur for everyone) ---------- */
   function genCity(){
@@ -376,8 +380,18 @@ label.lbl{font-size:14px;color:var(--fg);text-align:left;display:block;margin-bo
   }
 
   function buildSlots(){
-    const el=$('slots');el.textContent='';el.classList.toggle('long',word.length>9);
-    for(let i=0;i<word.length;i++){const s=document.createElement('span');s.className='slot';el.appendChild(s)}
+    const el=$('slots');el.textContent='';
+    el.classList.toggle('long',nameParts.some(p=>p.length>9)||word.length>12);
+    el.classList.toggle('xl',nameParts.some(p=>p.length>11));
+    nameParts.forEach((p,j)=>{
+      if(j){const a=document.createElement('span');a.className='amp';a.textContent='&';el.appendChild(a)}
+      const g=document.createElement('span');g.className='group';
+      for(let i=0;i<p.length;i++){const s=document.createElement('span');s.className='slot';g.appendChild(s)}
+      el.appendChild(g);
+    });
+    const pl=nameParts.length>1;
+    $('tray-label').textContent=pl?'Find your names in the night sky':'Find your name in the night sky';
+    $('finale-copy').textContent=`You found your ${pl?'names':'name'} in the dark. Here is to a year that looks good in every light.`;
   }
 
   /* ---------- setup ---------- */
@@ -527,7 +541,7 @@ label.lbl{font-size:14px;color:var(--fg);text-align:left;display:block;margin-bo
 
     // letters flying to the tray
     if(flights.length){
-      const slots=$('slots').children;
+      const slots=$('slots').querySelectorAll('.slot');
       ctx.save();ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillStyle='#ffe7b0';ctx.shadowColor='#ff9d1f';ctx.shadowBlur=16;
       flights=flights.filter(fl=>{
         const t=clamp((now-fl.t0)/700,0,1),e=easeOut(t);
@@ -610,7 +624,7 @@ label.lbl{font-size:14px;color:var(--fg);text-align:left;display:block;margin-bo
   if(fromLink){
     displayName=fromLink;
     $('intro-title').textContent=`${fromLink}, Jaipur saved you a light.`;
-    show('name-field',false);
+    show('name-field',false);if(fromLink.includes('&'))$('iw').textContent='names';
   }
   setup();
   const fontReady=document.fonts?Promise.race([document.fonts.load('40px "Yatra One"'),new Promise(r=>setTimeout(r,1500))]):Promise.resolve();
