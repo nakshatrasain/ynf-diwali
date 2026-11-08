@@ -49,6 +49,7 @@ body{background:var(--night);color:var(--fg);font-family:var(--body);overflow:hi
 .slots{display:flex;gap:5px;justify-content:center;flex-wrap:wrap}
 .slot{width:clamp(22px,7vw,40px);height:clamp(34px,9.5vw,50px);display:grid;place-items:center;
   border-bottom:2px solid rgba(247,238,221,.24);font-family:var(--display);font-size:clamp(22px,6.6vw,34px);line-height:1;color:var(--flame)}
+.slots.long .slot{width:clamp(20px,6.2vw,36px);font-size:clamp(19px,5.6vw,30px)}
 .slot.on{border-color:var(--marigold);text-shadow:0 0 14px rgba(255,170,40,.85);animation:pop .45s ease-out}
 @keyframes pop{0%{transform:scale(1.5)}100%{transform:scale(1)}}
 
@@ -208,7 +209,7 @@ label.lbl{font-size:14px;color:var(--fg);text-align:left;display:block;margin-bo
   }
   function nameToWord(n){
     const first=(n.split(' ')[0]||'').normalize('NFD').replace(/[̀-ͯ]/g,'').toUpperCase().replace(/[^A-Z]/g,'');
-    return (first||'DIWALI').slice(0,10);
+    return (first||'DIWALI').slice(0,12);
   }
   function slug(s){return (s||'').normalize('NFD').replace(/[̀-ͯ]/g,'').trim().replace(/\s+/g,'-').replace(/[^A-Za-z0-9-]/g,'').replace(/-+/g,'-').replace(/^-|-$/g,'').slice(0,30)}
 
@@ -375,7 +376,7 @@ label.lbl{font-size:14px;color:var(--fg);text-align:left;display:block;margin-bo
   }
 
   function buildSlots(){
-    const el=$('slots');el.textContent='';
+    const el=$('slots');el.textContent='';el.classList.toggle('long',word.length>9);
     for(let i=0;i<word.length;i++){const s=document.createElement('span');s.className='slot';el.appendChild(s)}
   }
 
