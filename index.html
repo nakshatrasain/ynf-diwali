@@ -1,0 +1,621 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0c0e26">
+<meta property="og:title" content="Jaipur saved you a light">
+<meta property="og:description" content="A Diwali surprise from Your Next Filter. Find your name hidden in the night sky.">
+<meta property="og:type" content="website">
+<style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}</style>
+<title>Filter the Night</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="description" content="A Diwali surprise from Your Next Filter. Find your name hidden in the night sky.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hind:wght@400;600&family=Yatra+One&display=swap">
+<style>
+/* Layout: one full-bleed night canvas (Jaipur on amavasya); a golden "filter" lens reveals the lit city.
+   UI floats above in a single gutter layer: letter tray top, hint bottom, cards centered. */
+:root{
+  color-scheme: dark;
+  --night:#0c0e26;
+  --ink:#08091c;
+  --marigold:#f2a51f;
+  --flame:#ffd36b;
+  --fg:#f7eedd;
+  --muted:#aeabc9;
+  --line:rgba(242,165,31,.32);
+  --glass:rgba(12,14,38,.74);
+  --display:"Yatra One","Hind",Georgia,serif;
+  --body:"Hind",system-ui,-apple-system,"Segoe UI",sans-serif;
+}
+html,body{height:100%}
+body{background:var(--night);color:var(--fg);font-family:var(--body);overflow:hidden;-webkit-tap-highlight-color:transparent}
+[hidden]{display:none!important}
+#app{position:fixed;inset:0;overflow:hidden}
+#sky{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none}
+#sky.playing{cursor:none}
+
+.layer{position:absolute;inset:0;display:flex;justify-content:center;pointer-events:none;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));
+  padding-block:calc(env(safe-area-inset-top,0px) + 16px) calc(env(safe-area-inset-bottom,0px) + 16px)}
+.layer.center{align-items:center}
+.layer.top{align-items:flex-start}
+.layer.bottom{align-items:flex-end}
+
+.tray{display:flex;flex-direction:column;align-items:center;gap:8px;text-align:center}
+.eyebrow,.card .eyebrow{margin:0;font-size:12px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--marigold)}
+.slots{display:flex;gap:5px;justify-content:center;flex-wrap:wrap}
+.slot{width:clamp(22px,7vw,40px);height:clamp(34px,9.5vw,50px);display:grid;place-items:center;
+  border-bottom:2px solid rgba(247,238,221,.24);font-family:var(--display);font-size:clamp(22px,6.6vw,34px);line-height:1;color:var(--flame)}
+.slot.on{border-color:var(--marigold);text-shadow:0 0 14px rgba(255,170,40,.85);animation:pop .45s ease-out}
+@keyframes pop{0%{transform:scale(1.5)}100%{transform:scale(1)}}
+
+.hint{margin:0;font-size:15px;color:var(--fg);background:rgba(8,9,28,.66);border:1px solid rgba(247,238,221,.12);
+  padding:8px 16px;border-radius:999px;text-align:center}
+.toast{margin-top:110px;font-size:15px;font-weight:600;color:var(--ink);background:var(--flame);padding:10px 18px;border-radius:999px;
+  box-shadow:0 6px 30px rgba(255,170,40,.45);animation:rise .4s ease-out;text-align:center}
+@keyframes rise{from{transform:translateY(-8px);opacity:0}to{transform:none;opacity:1}}
+
+.card{pointer-events:auto;width:min(420px,100%);max-height:100%;overflow:auto;background:var(--glass);
+  -webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);border:1px solid var(--line);border-radius:22px;
+  padding:26px 22px;text-align:center;display:flex;flex-direction:column;gap:12px;animation:rise .5s ease-out}
+.deva,.card .deva{margin:0;font-family:var(--display);font-size:22px;color:var(--flame);line-height:1.2}
+.card h1,.card h2{margin:0;font-family:var(--display);font-weight:400;line-height:1.12;text-wrap:balance;color:var(--fg)}
+.card h1{font-size:clamp(30px,8.4vw,44px)}
+.card h2{font-size:clamp(24px,6.6vw,32px)}
+.card p{margin:0;font-size:16px;line-height:1.55;color:var(--muted);text-wrap:pretty}
+.sign{font-size:14px!important;color:var(--fg)!important}
+.small{font-size:14px!important}
+
+.row{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+.btn{appearance:none;border:0;min-height:48px;padding:0 22px;border-radius:999px;font:600 16px/1 var(--body);cursor:pointer;
+  display:inline-flex;align-items:center;justify-content:center;text-decoration:none}
+.btn.primary{background:var(--marigold);color:var(--ink)}
+.btn.primary:hover{background:var(--flame)}
+.btn.ghost{background:transparent;color:var(--fg);border:1px solid rgba(247,238,221,.24)}
+.btn.ghost:hover{border-color:var(--marigold)}
+.btn[aria-disabled="true"]{opacity:.45;pointer-events:none}
+.link{appearance:none;background:none;border:0;color:var(--muted);font:400 14px var(--body);text-decoration:underline;text-underline-offset:3px;cursor:pointer;padding:6px;align-self:center}
+.link:hover{color:var(--fg)}
+input[type=text]{width:100%;min-height:48px;border-radius:12px;background:rgba(255,255,255,.06);border:1px solid rgba(247,238,221,.18);
+  color:var(--fg);font:400 17px var(--body);text-align:center;padding:0 14px}
+input[type=text]::placeholder{color:rgba(174,171,201,.7)}
+#share-link{font-size:14px;color:var(--flame)}
+label.lbl{font-size:14px;color:var(--fg);text-align:left;display:block;margin-bottom:6px}
+.field{text-align:left}
+.err{color:#ff9b8a!important;font-size:14px!important}
+:focus-visible{outline:2px solid var(--marigold);outline-offset:3px}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+@media (prefers-reduced-motion: reduce){*{animation:none!important}}
+</style>
+</head>
+<body>
+
+<div id="app">
+  <canvas id="sky" aria-label="Night view of Jaipur. Drag the golden filter to light it up and find hidden letters." role="img"></canvas>
+
+  <div class="layer top" id="tray-layer" hidden>
+    <div class="tray">
+      <p class="eyebrow" id="tray-label">Find your name in the night sky</p>
+      <div class="slots" id="slots" aria-hidden="true"></div>
+    </div>
+  </div>
+
+  <div class="layer top" id="toast-layer" hidden><div class="toast" id="toast"></div></div>
+
+  <div class="layer bottom" id="hint-layer" hidden><p class="hint" id="hint" aria-live="polite">Drag the light across the night sky</p></div>
+
+  <div class="layer center" id="intro-layer">
+    <section class="card" id="intro">
+      <p class="eyebrow">Your Next Filter · Diwali 2026</p>
+      <p class="deva" lang="hi">शुभ दीपावली</p>
+      <h1 id="intro-title">Jaipur saved you a light.</h1>
+      <p>Tonight is amavasya, the darkest night of the year. The letters of your name are hiding in this sky. Use the filter to find them.</p>
+      <form id="intro-form" autocomplete="off">
+        <div class="field" id="name-field">
+          <label class="lbl" for="name-input">Your first name</label>
+          <input type="text" id="name-input" maxlength="24" placeholder="Type your name" enterkeyhint="go">
+        </div>
+        <p class="err" id="name-err" hidden>Add your name to begin.</p>
+        <div class="row" style="margin-top:12px"><button class="btn primary" type="submit">Pick up the filter</button></div>
+      </form>
+      <p class="small">About a minute. Drag with your finger or mouse.</p>
+    </section>
+  </div>
+
+  <div class="layer top" id="finale-layer" hidden>
+    <section class="card" id="finale">
+      <p class="eyebrow">Your Next Filter · Diwali 2026</p>
+      <p class="deva" lang="hi">शुभ दीपावली</p>
+      <h1 id="finale-title">Happy Diwali</h1>
+      <p>You found your name in the dark. Here is to a year that looks good in every light.</p>
+      <p class="sign">With love, Team YNF, Jaipur</p>
+
+      <div class="row" id="finale-actions">
+        <button class="btn primary" type="button" id="share-open">Light one up for someone</button>
+        <button class="btn ghost" type="button" id="secret-open" hidden>Read the secret note</button>
+      </div>
+      <p class="small" id="secret-hint">One diya is still hiding where the filter lives. Tap it.</p>
+
+      <div id="share-panel" hidden>
+        <div class="field">
+          <label class="lbl" for="friend-input">Who gets the next light?</label>
+          <input type="text" id="friend-input" maxlength="24" placeholder="Their first name">
+        </div>
+        <p class="err" id="friend-err" hidden>Use English letters for the link.</p>
+        <div class="field" style="margin-top:10px">
+          <label class="lbl" for="share-link">Their personal link</label>
+          <input type="text" id="share-link" readonly placeholder="Type a name above">
+        </div>
+        <div class="row" style="margin-top:12px">
+          <button class="btn primary" type="button" id="copy-btn" aria-disabled="true">Copy link</button>
+          <a class="btn ghost" id="wa-btn" href="https://wa.me/" target="_blank" rel="noopener" aria-disabled="true">Send on WhatsApp</a>
+        </div>
+      </div>
+
+      <div class="row">
+        <button class="link" type="button" id="hide-card">Hide card to screenshot the city</button>
+        <button class="link" type="button" id="replay">Play again</button>
+      </div>
+    </section>
+  </div>
+
+  <div class="layer bottom" id="show-layer" hidden>
+    <button class="btn ghost" type="button" id="show-card" style="pointer-events:auto;background:rgba(8,9,28,.66)">Show my message</button>
+  </div>
+
+  <div class="layer center" id="secret-layer" hidden>
+    <section class="card">
+      <p class="eyebrow">Secret diya found</p>
+      <h2>Most people never spot this one.</h2>
+      <p>Seeing the small light in a dark frame is the whole job. It is what we try to do for every brand and creator we work with. Thank you for being part of our story this year.</p>
+      <p class="sign">Nakshatra and Team YNF</p>
+      <div class="row"><button class="btn primary" type="button" id="secret-close">Back to the lights</button></div>
+    </section>
+  </div>
+
+  <p class="sr" id="sr-status" aria-live="polite"></p>
+</div>
+
+<script>
+(() => {
+  // Public link of this page. Personal links are SHARE_BASE + "#Name".
+  const SHARE_BASE = "https://nakshatrasain.github.io/ynf-diwali/";
+
+  const TAU = Math.PI * 2;
+  const $ = id => document.getElementById(id);
+  const cv = $('sky'), ctx = cv.getContext('2d');
+  const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+  function hashStr(s){let h=2166136261;for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619)}return h>>>0}
+  const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+  const ease=t=>t<.5?4*t*t*t:1-Math.pow(-2*t+2,3)/2;
+  const easeOut=t=>1-Math.pow(1-t,3);
+
+  let W=0,H=0,dpr=1,G=null,darkC,litC;
+  let state='intro', displayName='', word='', letters=[], flights=[], parts=[];
+  let foundMarked=0, filled=0, lastFind=0, secretFound=false, signDwell=0;
+  let revealT0=0, revealR0=0, nextBurst=0, toastTimer=0;
+  const lens={x:0,y:0,r:80}, target={x:0,y:0};
+
+  /* ---------- names ---------- */
+  function cleanName(s){
+    s=(s||'').replace(/[-_+]+/g,' ').replace(/\s+/g,' ').trim().slice(0,24);
+    return s.split(' ').map(w=>w?w[0].toUpperCase()+w.slice(1):'').join(' ');
+  }
+  function nameToWord(n){
+    const first=(n.split(' ')[0]||'').normalize('NFD').replace(/[̀-ͯ]/g,'').toUpperCase().replace(/[^A-Z]/g,'');
+    return (first||'DIWALI').slice(0,10);
+  }
+  function slug(s){return (s||'').normalize('NFD').replace(/[̀-ͯ]/g,'').trim().replace(/\s+/g,'-').replace(/[^A-Za-z0-9-]/g,'').replace(/-+/g,'-').replace(/^-|-$/g,'').slice(0,30)}
+
+  /* ---------- city geometry (same Jaipur for everyone) ---------- */
+  function genCity(){
+    const rng=mulberry32(2026);
+    const g={};
+    g.groundY=Math.round(H*0.84);
+    g.cityH=Math.min(H*0.34,W*0.6,300);
+    const hb=g.groundY-g.cityH*0.98;
+    const n=28; g.hill=[];
+    for(let i=0;i<=n;i++){const t=i/n;g.hill.push([t*W,hb+Math.sin(t*5.2+1.3)*g.cityH*0.07+t*g.cityH*0.2+(rng()-.5)*4])}
+    g.fortEnd=Math.floor(n*0.46);
+    g.towers=[];for(let i=1;i<g.fortEnd;i+=3){const p=g.hill[i];g.towers.push({x:p[0],y:p[1],w:9+rng()*6,h:9+rng()*8})}
+    g.skyBottom=Math.min(...g.hill.map(p=>p[1]))-18;
+    g.stars=[];for(let i=0;i<150;i++)g.stars.push({x:rng()*W,y:rng()*hb,r:rng()<.1?1.4:.5+rng()*.7,a:.25+rng()*.6,p:rng()*TAU});
+    g.twinkle=g.stars.filter((s,i)=>i%6===0);
+    g.lanterns=[];for(let i=0;i<10;i++)g.lanterns.push({x:W*(.05+rng()*.9),y:hb*(.12+rng()*.8),s:.7+rng()*.6});
+    g.blds=[];let x=-8;
+    while(x<W+8){
+      const w=Math.round(30+rng()*50),h=g.cityH*(.26+rng()*.36),r=rng();
+      const b={x,w,h,top:g.groundY-h,roof:r<.26?'dome':r<.48?'chhatri':'flat',toran:rng()<.5,wins:[]};
+      const cols=Math.max(1,Math.floor((w-10)/12)),rows=Math.max(1,Math.floor((h-16)/19));
+      const ox=x+(w-(cols*12-6))/2;
+      for(let c=0;c<cols;c++)for(let q=0;q<rows;q++){if(rng()<.25)continue;b.wins.push({x:ox+c*12,y:b.top+10+q*19,dim:rng()<.12,lit:rng()<.85})}
+      g.blds.push(b);x+=w-1;
+    }
+    let best=null,bd=1e9;
+    for(const b of g.blds){const d=Math.abs(b.x+b.w/2-W*.82);if(d<bd&&b.w>=44){bd=d;best=b}}
+    if(!best)best=g.blds[Math.max(0,g.blds.length-2)];
+    best.roof='flat';best.toran=false;best.sign=true;
+    g.sign={x:best.x+best.w/2-24,y:best.top-30,w:48,h:20};g.sign.cx=g.sign.x+24;g.sign.cy=g.sign.y+10;
+    const hw=Math.min(W*.46,320),hh=Math.min(g.cityH*1.02,hw*.92);
+    g.hm={cx:W/2,hw,hh,tiers:[1,.86,.72,.56,.38].map((f,i)=>({w:hw*f,h:hh*.18,y:g.groundY-hh*.18*(i+1)}))};
+    return g;
+  }
+
+  /* ---------- drawing helpers ---------- */
+  function diya(x,cx,cy,s){
+    x.save();
+    x.fillStyle='#a8482a';x.beginPath();x.ellipse(cx,cy,4*s,2.2*s,0,0,Math.PI);x.fill();
+    x.shadowColor='#ff9a1f';x.shadowBlur=8*s;x.fillStyle='#ffd36b';
+    x.beginPath();x.moveTo(cx,cy-7*s);x.quadraticCurveTo(cx+2.6*s,cy-2*s,cx,cy);x.quadraticCurveTo(cx-2.6*s,cy-2*s,cx,cy-7*s);x.fill();
+    x.restore();
+  }
+  function archWin(x,wx,wy,w,h){x.beginPath();x.rect(wx,wy+w/2,w,h-w/2);x.arc(wx+w/2,wy+w/2,w/2,Math.PI,0);x.fill()}
+
+  function drawScene(x,mode){
+    const g=G,lit=mode==='lit';
+    const sg=x.createLinearGradient(0,0,0,g.groundY);
+    if(lit){sg.addColorStop(0,'#26102f');sg.addColorStop(.45,'#5c1f35');sg.addColorStop(.8,'#b5532d');sg.addColorStop(1,'#f0a243')}
+    else{sg.addColorStop(0,'#080a1e');sg.addColorStop(.7,'#141842');sg.addColorStop(1,'#1e2250')}
+    x.fillStyle=sg;x.fillRect(0,0,W,H);
+
+    if(!lit){
+      x.fillStyle='#e9e6ff';
+      for(const s of g.stars){x.globalAlpha=s.a;x.beginPath();x.arc(s.x,s.y,s.r,0,TAU);x.fill()}
+      x.globalAlpha=1;
+    }else{
+      for(const l of g.lanterns){
+        const rg=x.createRadialGradient(l.x,l.y,0,l.x,l.y,22*l.s);
+        rg.addColorStop(0,'rgba(255,200,110,.55)');rg.addColorStop(1,'rgba(255,160,60,0)');
+        x.fillStyle=rg;x.beginPath();x.arc(l.x,l.y,22*l.s,0,TAU);x.fill();
+        x.fillStyle='#ffcf70';x.beginPath();x.roundRect?x.roundRect(l.x-3.5*l.s,l.y-5*l.s,7*l.s,10*l.s,2.5*l.s):x.rect(l.x-3.5*l.s,l.y-5*l.s,7*l.s,10*l.s);x.fill();
+      }
+    }
+
+    // Nahargarh hills and fort wall
+    x.fillStyle=lit?'#3b1623':'#0f1132';
+    x.beginPath();x.moveTo(0,g.groundY);for(const p of g.hill)x.lineTo(p[0],p[1]);x.lineTo(W,g.groundY);x.closePath();x.fill();
+    x.strokeStyle=lit?'#6a2a24':'#15173d';x.lineWidth=5;x.lineJoin='round';
+    x.beginPath();for(let i=0;i<=g.fortEnd;i++){const p=g.hill[i];i?x.lineTo(p[0],p[1]-3):x.moveTo(p[0],p[1]-3)}x.stroke();
+    x.fillStyle=lit?'#6a2a24':'#15173d';
+    for(const t of g.towers){x.fillRect(t.x-t.w/2,t.y-t.h,t.w,t.h);x.beginPath();x.arc(t.x,t.y-t.h,t.w/2,Math.PI,0);x.fill()}
+    if(lit){
+      x.save();x.fillStyle='#ffd36b';x.shadowColor='#ffae32';x.shadowBlur=6;
+      for(let i=0;i<g.fortEnd;i++){const a=g.hill[i],b=g.hill[i+1];const d=Math.hypot(b[0]-a[0],b[1]-a[1]);const k=Math.max(1,Math.floor(d/9));
+        for(let j=0;j<k;j++){const t=j/k;x.beginPath();x.arc(a[0]+(b[0]-a[0])*t,a[1]+(b[1]-a[1])*t-6,1.3,0,TAU);x.fill()}}
+      x.restore();
+    }
+
+    // buildings
+    for(const b of g.blds){
+      const body=lit?'#3d1813':'#090a1d';
+      x.fillStyle=body;x.fillRect(b.x,b.top,b.w,b.h+2);
+      const cx=b.x+b.w/2;
+      if(b.roof==='dome'){x.beginPath();x.arc(cx,b.top,b.w*.32,Math.PI,0);x.fill();x.fillRect(cx-1,b.top-b.w*.32-7,2,8)}
+      else if(b.roof==='chhatri'){
+        const r=b.w*.22;x.fillRect(cx-r-3,b.top-3,2*r+6,3);x.fillRect(cx-r,b.top-11,2,9);x.fillRect(cx+r-2,b.top-11,2,9);
+        x.beginPath();x.arc(cx,b.top-11,r,Math.PI,0);x.fill();x.fillRect(cx-1,b.top-11-r-6,2,7);
+      }else{for(let px=b.x+2;px<b.x+b.w-4;px+=8)x.fillRect(px,b.top-4,4,4)}
+      for(const w of b.wins){
+        if(lit){x.save();if(w.lit){x.fillStyle='#ffc864';x.shadowColor='#ffa53a';x.shadowBlur=6}else x.fillStyle='#5a2a1c';archWin(x,w.x,w.y,6,10);x.restore()}
+        else{x.fillStyle=w.dim?'rgba(255,190,110,.2)':'rgba(150,160,255,.045)';archWin(x,w.x,w.y,6,10)}
+      }
+      if(lit&&b.roof==='flat'&&!b.sign){
+        if(b.toran){
+          x.save();const x0=b.x+3,x1=b.x+b.w-3,y0=b.top+2,sag=10;const n=Math.max(4,Math.floor((x1-x0)/7));
+          for(let i=0;i<=n;i++){const t=i/n;const px=x0+(x1-x0)*t;const py=y0+4*sag*t*(1-t);x.fillStyle=i%2?'#f2a51f':'#ff6a3d';x.beginPath();x.arc(px,py,2.2,0,TAU);x.fill()}
+          x.restore();
+        }else{for(let px=b.x+7;px<b.x+b.w-4;px+=13)diya(x,px,b.top-5,.85)}
+      }
+    }
+
+    // Hawa Mahal
+    const hm=g.hm;
+    for(let i=0;i<hm.tiers.length;i++){
+      const t=hm.tiers[i];const tx=hm.cx-t.w/2;
+      x.fillStyle=lit?'#9a3e33':'#0e0f29';x.fillRect(tx,t.y,t.w,t.h+1);
+      x.fillStyle=lit?'#b8543f':'#12143a';
+      for(let px=tx+6;px<tx+t.w-4;px+=12){x.beginPath();x.arc(px,t.y,5,Math.PI,0);x.fill()}
+      const cols=Math.floor((t.w-10)/13),rows=t.h>34?2:1;const ox=hm.cx-(cols*13-6)/2;
+      for(let c=0;c<cols;c++)for(let r=0;r<rows;r++){
+        const wy=t.y+(t.h-(rows*14))/2+r*14+1;
+        if(lit){x.save();x.fillStyle='#ffd27a';x.shadowColor='#ffb347';x.shadowBlur=5;archWin(x,ox+c*13,wy,7,11);x.restore()}
+        else{x.fillStyle=((c*7+r*3+i)%9===0)?'rgba(255,190,110,.18)':'rgba(150,160,255,.05)';archWin(x,ox+c*13,wy,7,11)}
+      }
+    }
+    const top=hm.tiers[hm.tiers.length-1];
+    x.fillStyle=lit?'#9a3e33':'#0e0f29';
+    x.beginPath();x.moveTo(hm.cx-top.w*.3,top.y);x.lineTo(hm.cx,top.y-hm.hh*.12);x.lineTo(hm.cx+top.w*.3,top.y);x.closePath();x.fill();
+    x.fillRect(hm.cx-1,top.y-hm.hh*.12-8,2,9);
+    if(lit)diya(x,hm.cx,top.y-hm.hh*.12-9,1.1);
+
+    // YNF sign (the easter egg lives here)
+    const s=g.sign;
+    x.fillStyle=lit?'#3d1813':'#090a1d';x.fillRect(s.x+8,s.y+s.h,2,10);x.fillRect(s.x+s.w-10,s.y+s.h,2,10);
+    x.fillStyle=lit?'#1d0b12':'#0b0c20';x.fillRect(s.x,s.y,s.w,s.h);
+    x.lineWidth=1.2;x.strokeStyle=lit?'#f2a51f':'rgba(247,238,221,.14)';x.strokeRect(s.x+.5,s.y+.5,s.w-1,s.h-1);
+    x.save();x.font='600 13px Hind, system-ui, sans-serif';x.textAlign='center';x.textBaseline='middle';
+    if(lit){x.fillStyle='#ffd36b';x.shadowColor='#ffae32';x.shadowBlur=8}else x.fillStyle='rgba(247,238,221,.2)';
+    x.fillText('YNF',s.cx,s.cy+1);x.restore();
+    if(lit)diya(x,s.cx,s.y-1,.9);
+
+    // ground
+    x.fillStyle=lit?'#251009':'#05061a';x.fillRect(0,g.groundY,W,H-g.groundY);
+    if(lit){
+      const rg=x.createLinearGradient(0,g.groundY,0,H);rg.addColorStop(0,'rgba(240,162,67,.28)');rg.addColorStop(1,'rgba(240,162,67,0)');
+      x.fillStyle=rg;x.fillRect(0,g.groundY,W,H-g.groundY);
+      for(let px=10;px<W;px+=22)diya(x,px,g.groundY+14,1);
+    }
+  }
+
+  function makeLayer(mode){
+    const c=document.createElement('canvas');c.width=Math.round(W*dpr);c.height=Math.round(H*dpr);
+    const x=c.getContext('2d');x.setTransform(dpr,0,0,dpr,0,0);drawScene(x,mode);return c;
+  }
+
+  /* ---------- letters ---------- */
+  function placeLetters(keep){
+    const rng=mulberry32(hashStr(word)^0x9e3779);
+    const top=Math.max(118,H*.16),bottom=Math.max(top+110,G.skyBottom);
+    const x0=W*.1,x1=W*.9;
+    const fs=Math.round(clamp(W*.075,28,44));
+    let minD=Math.min(96,Math.sqrt((x1-x0)*(bottom-top)/Math.max(1,word.length))*.78);
+    const avoid={x:W/2,y:G.groundY-G.cityH*.5};const pts=[];
+    for(let i=0;i<word.length;i++){
+      let p,tries=0;
+      do{p={x:x0+rng()*(x1-x0),y:top+rng()*(bottom-top)};tries++;if(tries%60===0)minD*=.85}
+      while(tries<600&&(pts.some(q=>Math.hypot(q.x-p.x,q.y-p.y)<minD)||Math.hypot(p.x-avoid.x,p.y-avoid.y)<lens.r*1.3));
+      pts.push(p);
+    }
+    letters=word.split('').map((ch,i)=>({ch,x:pts[i].x,y:pts[i].y,rot:(rng()-.5)*.5,fs,found:keep&&letters[i]?letters[i].found:false}));
+  }
+
+  function buildSlots(){
+    const el=$('slots');el.textContent='';
+    for(let i=0;i<word.length;i++){const s=document.createElement('span');s.className='slot';el.appendChild(s)}
+  }
+
+  /* ---------- setup ---------- */
+  function setup(){
+    W=cv.clientWidth;H=cv.clientHeight;dpr=Math.min(window.devicePixelRatio||1,2);
+    cv.width=Math.round(W*dpr);cv.height=Math.round(H*dpr);
+    lens.r=clamp(Math.min(W,H)*.2,64,120);
+    G=genCity();darkC=makeLayer('dark');litC=makeLayer('lit');
+    if(word)placeLetters(true);
+    if(state==='done')lens.r=Math.hypot(W,H);
+    if(!lens.x){lens.x=target.x=W/2;lens.y=target.y=G.groundY-G.cityH*.5}
+  }
+
+  /* ---------- UI helpers ---------- */
+  function show(id,on){$(id).hidden=!on}
+  function toast(msg){
+    $('toast').textContent=msg;show('toast-layer',true);
+    clearTimeout(toastTimer);toastTimer=setTimeout(()=>show('toast-layer',false),2800);
+  }
+  function setHint(t){$('hint').textContent=t}
+
+  /* ---------- game flow ---------- */
+  function start(name){
+    displayName=name;word=nameToWord(name);
+    letters=[];flights=[];parts=[];foundMarked=0;filled=0;signDwell=0;
+    lens.r=clamp(Math.min(W,H)*.2,64,120);
+    placeLetters(false);buildSlots();
+    state='play';cv.classList.add('playing');
+    show('intro-layer',false);show('finale-layer',false);show('show-layer',false);show('secret-layer',false);
+    show('tray-layer',true);show('hint-layer',true);
+    setHint('Drag the light across the night sky');
+    target.x=W/2;target.y=G.groundY-G.cityH*.5;
+    lastFind=performance.now();
+  }
+
+  function onFound(l,now){
+    l.found=true;foundMarked++;lastFind=now;
+    flights.push({ch:l.ch,x:l.x,y:l.y,i:letters.indexOf(l),t0:now,fs:l.fs});
+    if(foundMarked<letters.length)setHint(`${foundMarked} of ${letters.length} letters found`);
+    else show('hint-layer',false);
+    $('sr-status').textContent=`Found ${l.ch}. ${foundMarked} of ${letters.length}.`;
+  }
+
+  function startReveal(){
+    state='reveal';revealT0=performance.now();revealR0=lens.r;cv.classList.remove('playing');
+  }
+
+  function finish(){
+    state='done';lens.r=Math.hypot(W,H);
+    show('tray-layer',false);
+    $('finale-title').textContent=`Happy Diwali, ${displayName}`;
+    show('secret-open',secretFound);show('secret-hint',!secretFound);
+    show('share-panel',false);show('finale-actions',true);
+    show('finale-layer',true);
+    nextBurst=performance.now();
+  }
+
+  function openSecret(){
+    secretFound=true;show('finale-layer',false);show('show-layer',false);show('secret-layer',true);
+    $('secret-close').focus();
+  }
+
+  /* ---------- loop ---------- */
+  let last=performance.now();
+  function frame(now){
+    const dt=Math.min(50,now-last);last=now;const k=dt/16.67;
+
+    if(state==='intro'&&!reduced){
+      target.x=W/2+Math.cos(now/2600)*W*.28;
+      target.y=G.groundY-G.cityH*.55+Math.sin(now/1900)*G.cityH*.32;
+    }
+    const f=reduced?1:1-Math.pow(.78,k);
+    lens.x+=(target.x-lens.x)*f;lens.y+=(target.y-lens.y)*f;
+
+    if(state==='play'){
+      for(const l of letters)if(!l.found&&Math.hypot(l.x-lens.x,l.y-lens.y)<lens.r*.5)onFound(l,now);
+      if(!secretFound){
+        if(Math.hypot(G.sign.cx-lens.x,G.sign.cy-lens.y)<lens.r*.4){signDwell+=dt;if(signDwell>550){secretFound=true;toast('You found the hidden diya. Keep it a secret.')}}
+        else signDwell=0;
+      }
+    }
+    if(state==='reveal'){
+      const t=clamp((now-revealT0)/1500,0,1);
+      lens.x+=(W/2-lens.x)*.04*k;lens.y+=(H/2-lens.y)*.04*k;
+      lens.r=revealR0+(Math.hypot(W,H)*1.1-revealR0)*ease(t);
+      if(t>=1)finish();
+    }
+    if(state==='done'&&!reduced&&now>=nextBurst){
+      const early=now-revealT0<9000;
+      burst(W*(.12+Math.random()*.76),H*(.1+Math.random()*.32));
+      nextBurst=now+(early?520+Math.random()*400:1500+Math.random()*1400);
+    }
+
+    // particles
+    for(const p of parts){p.vx*=Math.pow(.985,k);p.vy=p.vy*Math.pow(.985,k)+.035*k;p.x+=p.vx*k;p.y+=p.vy*k;p.life-=p.dec*k}
+    parts=parts.filter(p=>p.life>0);
+
+    draw(now);
+    requestAnimationFrame(frame);
+  }
+
+  function burst(x,y){
+    const cols=['#ffd36b','#f2a51f','#e2457a','#fff3d6','#ff7b3a'];
+    const c=cols[Math.random()*cols.length|0],c2=cols[Math.random()*cols.length|0];
+    const n=Math.min(52,700-parts.length);
+    for(let i=0;i<n;i++){const a=TAU*i/n+Math.random()*.12,sp=1.4+Math.random()*2.6;
+      parts.push({x,y,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp,life:1,c:i%3?c:c2,dec:.009+Math.random()*.008})}
+  }
+
+  function sparkle(x,y,s,a){
+    ctx.save();ctx.globalAlpha=a;ctx.fillStyle='#ffe7b0';ctx.shadowColor='#ffb347';ctx.shadowBlur=10;
+    ctx.beginPath();ctx.moveTo(x,y-s);ctx.quadraticCurveTo(x,y,x+s,y);ctx.quadraticCurveTo(x,y,x,y+s);ctx.quadraticCurveTo(x,y,x-s,y);ctx.quadraticCurveTo(x,y,x,y-s);ctx.fill();
+    ctx.restore();
+  }
+
+  function draw(now){
+    ctx.setTransform(dpr,0,0,dpr,0,0);
+    if(state==='done'){
+      ctx.drawImage(litC,0,0,W,H);
+      if(!secretFound){const a=.35+.35*Math.sin(now/300);ctx.save();ctx.strokeStyle=`rgba(255,211,107,${a})`;ctx.lineWidth=2;
+        ctx.strokeRect(G.sign.x-6,G.sign.y-14,G.sign.w+12,G.sign.h+20);ctx.restore()}
+    }else{
+      ctx.drawImage(darkC,0,0,W,H);
+      if(!reduced){ctx.fillStyle='#fff8e6';for(const s of G.twinkle){ctx.globalAlpha=.25+.5*(.5+.5*Math.sin(now/500+s.p));ctx.beginPath();ctx.arc(s.x,s.y,s.r+.3,0,TAU);ctx.fill()}ctx.globalAlpha=1}
+      if(state==='play'&&now-lastFind>9000){
+        let best=null,bd=1e9;for(const l of letters)if(!l.found){const d=Math.hypot(l.x-lens.x,l.y-lens.y);if(d<bd){bd=d;best=l}}
+        if(best)sparkle(best.x,best.y,7,.35+.35*Math.sin(now/260));
+      }
+      ctx.save();ctx.beginPath();ctx.arc(lens.x,lens.y,lens.r,0,TAU);ctx.clip();
+      ctx.drawImage(litC,0,0,W,H);
+      if(state==='play'||state==='reveal'){
+        ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillStyle='#ffe7b0';ctx.shadowColor='#ff9d1f';ctx.shadowBlur=16;
+        for(const l of letters){if(l.found)continue;ctx.save();ctx.translate(l.x,l.y);ctx.rotate(l.rot);ctx.font=`${l.fs}px "Yatra One", Hind, serif`;ctx.fillText(l.ch,0,0);ctx.restore()}
+      }
+      ctx.restore();
+      // lens ring + viewfinder corners
+      const fade=state==='reveal'?clamp(1-(lens.r-revealR0)/300,0,1):1;
+      if(fade>0){
+        ctx.save();ctx.globalAlpha=fade;ctx.strokeStyle='rgba(255,211,107,.9)';ctx.lineWidth=2;ctx.shadowColor='#ffae32';ctx.shadowBlur=18;
+        ctx.beginPath();ctx.arc(lens.x,lens.y,lens.r,0,TAU);ctx.stroke();
+        ctx.shadowBlur=0;ctx.strokeStyle='rgba(255,240,215,.7)';const q=lens.r*.6,L=lens.r*.16;
+        for(const [sx,sy] of [[-1,-1],[1,-1],[1,1],[-1,1]]){const cx=lens.x+sx*q,cy=lens.y+sy*q;
+          ctx.beginPath();ctx.moveTo(cx,cy-sy*L);ctx.lineTo(cx,cy);ctx.lineTo(cx-sx*L,cy);ctx.stroke()}
+        ctx.restore();
+      }
+    }
+
+    // letters flying to the tray
+    if(flights.length){
+      const slots=$('slots').children;
+      ctx.save();ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillStyle='#ffe7b0';ctx.shadowColor='#ff9d1f';ctx.shadowBlur=16;
+      flights=flights.filter(fl=>{
+        const t=clamp((now-fl.t0)/700,0,1),e=easeOut(t);
+        const r=slots[fl.i]?slots[fl.i].getBoundingClientRect():{left:W/2,top:40,width:0,height:0};
+        const tx=r.left+r.width/2,ty=r.top+r.height/2;
+        ctx.font=`${Math.round(fl.fs*(1-.25*e))}px "Yatra One", Hind, serif`;
+        ctx.fillText(fl.ch,fl.x+(tx-fl.x)*e,fl.y+(ty-fl.y)*e-Math.sin(e*Math.PI)*40);
+        if(t>=1){
+          if(slots[fl.i]){slots[fl.i].textContent=fl.ch;slots[fl.i].classList.add('on')}
+          filled++;if(filled===letters.length)setTimeout(startReveal,450);
+          return false;
+        }
+        return true;
+      });
+      ctx.restore();
+    }
+
+    if(parts.length){
+      ctx.save();ctx.globalCompositeOperation='lighter';
+      for(const p of parts){ctx.globalAlpha=Math.max(0,p.life);ctx.fillStyle=p.c;ctx.beginPath();ctx.arc(p.x,p.y,1.8,0,TAU);ctx.fill()}
+      ctx.restore();
+    }
+  }
+
+  /* ---------- input ---------- */
+  function pt(e){return{x:e.clientX,y:e.clientY}}
+  cv.addEventListener('pointermove',e=>{if(state==='play'){const p=pt(e);target.x=p.x;target.y=p.y}});
+  cv.addEventListener('pointerdown',e=>{
+    const p=pt(e);
+    if(state==='play'){target.x=p.x;target.y=p.y;try{cv.setPointerCapture(e.pointerId)}catch(_){}}
+    else if(state==='done'){
+      const s=G.sign;
+      if(p.x>s.x-18&&p.x<s.x+s.w+18&&p.y>s.y-24&&p.y<s.y+s.h+20)openSecret();
+      else if(!reduced)burst(p.x,p.y);
+    }
+  });
+  window.addEventListener('keydown',e=>{
+    if(state!=='play')return;const step=24;
+    if(e.key==='ArrowLeft')target.x-=step;else if(e.key==='ArrowRight')target.x+=step;
+    else if(e.key==='ArrowUp')target.y-=step;else if(e.key==='ArrowDown')target.y+=step;else return;
+    target.x=clamp(target.x,0,W);target.y=clamp(target.y,0,H);e.preventDefault();
+  });
+
+  $('intro-form').addEventListener('submit',e=>{
+    e.preventDefault();
+    const n=displayName||cleanName($('name-input').value);
+    if(!n){show('name-err',true);$('name-input').focus();return}
+    show('name-err',false);start(n);
+  });
+
+  $('share-open').addEventListener('click',()=>{show('finale-actions',false);show('secret-hint',false);show('share-panel',true);$('friend-input').focus()});
+  $('secret-open').addEventListener('click',openSecret);
+  $('secret-close').addEventListener('click',()=>{show('secret-layer',false);show('finale-layer',true);show('secret-open',true);show('secret-hint',false)});
+  $('hide-card').addEventListener('click',()=>{show('finale-layer',false);show('show-layer',true)});
+  $('show-card').addEventListener('click',()=>{show('show-layer',false);show('finale-layer',true)});
+  $('replay').addEventListener('click',()=>start(displayName));
+
+  const base=()=>SHARE_BASE||location.href.split('#')[0];
+  $('friend-input').addEventListener('input',()=>{
+    const raw=$('friend-input').value,s=slug(raw);
+    const ok=!!s;show('friend-err',!!raw.trim()&&!ok);
+    $('share-link').value=ok?`${base()}#${s}`:'';
+    $('copy-btn').setAttribute('aria-disabled',String(!ok));$('wa-btn').setAttribute('aria-disabled',String(!ok));
+    $('copy-btn').textContent='Copy link';
+    if(ok){const nm=cleanName(s);
+      $('wa-btn').href='https://wa.me/?text='+encodeURIComponent(`Happy Diwali, ${nm}! I lit one up for you. Find your name in the night sky: ${base()}#${s}`)}
+  });
+  $('copy-btn').addEventListener('click',()=>{
+    const v=$('share-link').value;if(!v)return;
+    const done=()=>{$('copy-btn').textContent='Copied'};
+    const fallback=()=>{const i=$('share-link');i.focus();i.select();$('copy-btn').textContent='Selected, copy it'};
+    try{navigator.clipboard.writeText(v).then(done,fallback)}catch(_){fallback()}
+  });
+
+  let rz;window.addEventListener('resize',()=>{clearTimeout(rz);rz=setTimeout(setup,150)});
+
+  /* ---------- boot ---------- */
+  let h='';try{h=decodeURIComponent(location.hash.slice(1))}catch(_){h=location.hash.slice(1)}
+  const fromLink=cleanName(h);
+  if(fromLink){
+    displayName=fromLink;
+    $('intro-title').textContent=`${fromLink}, Jaipur saved you a light.`;
+    show('name-field',false);
+  }
+  setup();
+  const fontReady=document.fonts?Promise.race([document.fonts.load('40px "Yatra One"'),new Promise(r=>setTimeout(r,1500))]):Promise.resolve();
+  fontReady.then(()=>{}).finally?.(()=>{});
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
